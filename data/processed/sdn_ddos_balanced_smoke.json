@@ -1,0 +1,21 @@
+{
+  "rows": 39,
+  "classes": 13,
+  "rows_per_class": 3,
+  "labels": [
+    "BENIGN",
+    "UDP_FLOOD",
+    "ICMP_FLOOD",
+    "TCP_SYN_FLOOD",
+    "TCP_ACK_FLOOD",
+    "TCP_RST_FLOOD",
+    "HTTP_FLOOD",
+    "SLOW_HTTP",
+    "DNS_AMPLIFICATION",
+    "NTP_AMPLIFICATION",
+    "SSDP_AMPLIFICATION",
+    "UDP_AMPLIFICATION",
+    "MIXED_DDOS"
+  ],
+  "data_source": "controlled_profile"
+}

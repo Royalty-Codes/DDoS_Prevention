@@ -1,0 +1,5 @@
+seed: 42
+rows_per_scenario: 10000
+dataset_output: ../../data/processed/sdn_ddos_controlled_lab.parquet
+pcap_output_dir: ../../data/pcaps
+metadata_output_dir: ../../data/metadata

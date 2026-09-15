@@ -1,0 +1,19 @@
+{
+  "rows": 110000,
+  "columns": 28,
+  "labels": [
+    "BENIGN",
+    "HTTP_FLOOD",
+    "ICMP_FLOOD",
+    "LAND_STYLE",
+    "PACKET_IN_FLOOD_STYLE",
+    "PING_OF_DEATH_STYLE",
+    "SLOWLORIS_STYLE",
+    "SMURF_STYLE",
+    "SYN_FLOOD",
+    "UDP_AMPLIFICATION_STYLE",
+    "UDP_FLOOD"
+  ],
+  "data_source": "controlled_lab_profile",
+  "note": "Run the OpenFlow collector for data_source=real_openflow telemetry."
+}

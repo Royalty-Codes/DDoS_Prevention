@@ -1,0 +1,9 @@
+numpy>=1.24
+pandas>=2.0
+pyarrow>=12.0
+pyspark>=3.5
+plotly>=5.18
+jupyter>=1.0
+nbclient>=0.8
+PyYAML>=6.0
+ryu>=4.34

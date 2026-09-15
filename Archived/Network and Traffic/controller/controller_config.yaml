@@ -1,0 +1,5 @@
+openflow_version: "1.3"
+controller_host: 127.0.0.1
+controller_port: 6653
+telemetry_interval_seconds: 10
+telemetry_output: ../../data/raw/openflow_snapshots.jsonl

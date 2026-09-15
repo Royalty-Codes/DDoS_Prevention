@@ -1,0 +1,4 @@
+lab_network: 10.0.0.0/8
+external_targets_allowed: false
+max_packets_per_second: 2800
+window_seconds: 10
