@@ -1,0 +1,16 @@
+# Python and notebook state
+__pycache__/
+*.py[cod]
+.venv/
+.ryu-venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Runtime capture artifacts: version code and manifests, not generated telemetry.
+runs/
+artifacts/
+data/
+
+# Local operating-system files
+.DS_Store
+Thumbs.db

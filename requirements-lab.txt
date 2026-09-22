@@ -1,0 +1,3 @@
+# Deliberately excludes pandas and numpy from the SDN capture path.
+# Install this only where final Parquet materialization runs.
+pyarrow>=15.0
