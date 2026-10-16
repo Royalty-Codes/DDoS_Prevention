@@ -219,7 +219,7 @@ def preprocess(spark, parts, features, out):
 
 
 def transform_numeric(frame, stats):
-    values = frame[stats['features']].to_numpy(dtype=float)
+    values = frame[stats['features']].to_numpy(dtype=float, copy=True)
     values[~np.isfinite(values)] = np.nan
     values = np.where(np.isnan(values), np.asarray(stats['median']), values)
     standard_deviation = np.asarray(stats['std'])
