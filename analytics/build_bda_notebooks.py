@@ -259,6 +259,7 @@ if not DATASET.is_file():
 def show_figure(name):
     display(Image(filename=str(RUN_DIR/'figures'/f'{name}.png')))
 pd.set_option('display.max_columns', 30)
+pd.set_option('display.max_rows', 100)
 print('Dataset:', DATASET)
 print('Java:', subprocess.run(['java', '-version'], capture_output=True, text=True).stderr.splitlines()[0])
 print('Resolved source commit:', subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'], text=True).strip())''')
@@ -339,6 +340,7 @@ Do not remove high-rate windows merely because they are outliers; those may be t
 No SMOTE is applied because the current classes are balanced. If future data is imbalanced,
 resampling must happen inside the training split only.''')
     code('''display(audit[['column','dtype','missing','unique','use','reason']])
+display(audit[audit.column.isin(features)][['column','unit','meaning']])
 print('Dropped training constants:', contract['train_constant_columns'])
 print('Retained feature order:', features)
 stats = json.loads((RUN_DIR/'preprocessing.json').read_text())

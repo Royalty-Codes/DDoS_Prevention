@@ -17,6 +17,7 @@ from time import perf_counter
 import joblib
 import numpy as np
 import pandas as pd
+from .feature_notes import FEATURE_NOTES
 from sklearn.metrics import (
     accuracy_score, average_precision_score, classification_report,
     confusion_matrix, f1_score, precision_score, recall_score, roc_auc_score,
@@ -136,7 +137,9 @@ def load_and_audit(spark, dataset, out):
     for name in frame:
         audit.append({'column': name, 'dtype': str(frame[name].dtype), 'missing': int(frame[name].isna().sum()),
                       'unique': int(frame[name].nunique()), 'use': 'excluded' if name in EXCLUDED else 'candidate numeric telemetry',
-                      'reason': EXCLUDED.get(name, 'behavioral feature; synthetic measurement-style value')})
+                      'reason': EXCLUDED.get(name, 'behavioral feature; synthetic measurement-style value'),
+                      'unit': FEATURE_NOTES.get(name, ('metadata', ''))[0],
+                      'meaning': FEATURE_NOTES.get(name, ('', EXCLUDED.get(name, '')))[1]})
     audit = pd.DataFrame(audit)
     audit.to_csv(out / 'column_audit.csv', index=False)
     quality = {
