@@ -212,7 +212,7 @@ That feasibility check belongs to the dataset-generation phase before any captur
     destination.mkdir(parents=True, exist_ok=True)
     (destination/'PRESENTATION_AND_VIVA_GUIDE.md').write_text(guide, encoding='utf-8')
     shutil.copytree(run, destination/'results', dirs_exist_ok=True)
-    source_dest = destination/'source'
+    source_dest = destination/'analytics'
     source_dest.mkdir(exist_ok=True)
     shutil.copytree(root/'analytics/bda', source_dest/'bda', dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns('__pycache__'))

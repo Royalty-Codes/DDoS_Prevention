@@ -1,6 +1,10 @@
 """Complete feature-distribution atlas for notebook presentation, using saved data."""
 import hashlib
 import json
+import math
+import importlib.metadata
+import subprocess
+import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -8,13 +12,41 @@ import numpy as np
 import pandas as pd
 
 from .feature_notes import FEATURE_NOTES
-from .visuals import BLUE, GOLD, save
+from .visuals import BLUE, GOLD, save, dataset_figures
 
 
 def build(run_dir):
     run = Path(run_dir)
+    packages = {distribution.metadata['Name']: distribution.version
+                for distribution in importlib.metadata.distributions()}
+    (run/'requirements-executed.txt').write_text('\n'.join(f'{name}=={version}' for name, version in sorted(packages.items()))+'\n', encoding='utf-8')
+    java = subprocess.run(['java','-version'], capture_output=True, text=True, check=True).stderr.strip()
+    (run/'runtime_details.json').write_text(json.dumps({'python_executable':sys.executable,
+                                                       'java':java, 'all_package_versions':packages}, indent=2), encoding='utf-8')
     frame = pd.read_parquet(run/'clean_dataset.parquet')
     features = json.loads((run/'feature_contract.json').read_text())['features']
+    manifest = pd.read_csv(run/'split_manifest.csv')
+    indexed = frame.set_index('window_id', drop=False)
+    parts = {name:indexed.loc[group.window_id].reset_index(drop=True)
+             for name, group in manifest.groupby('split')}
+    dataset_figures(frame, features, parts, pd.read_csv(run/'engine_benchmark.csv'), run)
+    operating = json.loads((run/'operating_points.json').read_text())
+    intervals = []
+    def wilson(successes, total):
+        z = 1.959963984540054
+        fraction = successes / total
+        denominator = 1 + z*z/total
+        center = (fraction + z*z/(2*total)) / denominator
+        half = z * math.sqrt(fraction*(1-fraction)/total + z*z/(4*total*total)) / denominator
+        return max(0., center-half), min(1., center+half)
+    for name, record in operating.items():
+        for metric, numerator, denominator in [('benign_fpr', record['fp'], record['fp']+record['tn']),
+                                                ('attack_recall', record['tp'], record['tp']+record['fn'])]:
+            low, high = wilson(numerator, denominator)
+            intervals.append({'model':name, 'metric':metric, 'events':numerator,
+                              'denominator':denominator, 'estimate':numerator/denominator,
+                              'wilson_95_low':low, 'wilson_95_high':high})
+    pd.DataFrame(intervals).to_csv(run/'operating_uncertainty.csv', index=False)
     benign = frame.label.eq('BENIGN')
     for page, start in enumerate(range(0, len(features), 8), 1):
         fig, axes = plt.subplots(2, 4, figsize=(18, 8))
@@ -47,6 +79,7 @@ def build(run_dir):
     save(fig, run, '00_pipeline')
     (run/'figure_atlas_provenance.json').write_text(json.dumps({
         'source_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        'visuals_sha256':hashlib.sha256(Path(__file__).with_name('visuals.py').read_bytes()).hexdigest(),
         'data':'clean_dataset.parquet', 'features':len(features), 'pages':5,
         'notes':'Descriptive full-dataset EDA; not feature or hyperparameter selection.'}, indent=2), encoding='utf-8')
 

@@ -100,6 +100,8 @@ def dataset_figures(frame, features, parts, timings, out):
     axes[0].barh(missing.index, missing.values, color=BLUE)
     axes[0].set(xlabel='Null cells', title='Missing-value audit (12 columns shown)')
     if missing.max() == 0:
+        axes[0].set_xlim(0, 1)
+        axes[0].set_xticks([0, 1])
         axes[0].text(.5, .5, 'No missing values in any column', transform=axes[0].transAxes, ha='center', bbox={'facecolor': 'white'})
     axes[1].scatter(frame.flow_table_capacity, frame.flow_table_size, s=4, alpha=.08, color=BLUE)
     axes[1].plot([0, 2000], [0, 2000], color=GOLD, linestyle='--', label='Size = capacity')

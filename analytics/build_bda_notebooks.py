@@ -151,7 +151,7 @@ if IN_COLAB or IN_KAGGLE:
     ROOT = BASE / 'ddos-bda-checkout'
     marker = ROOT / '.codex-bda-disposable'
     if ROOT.exists():
-        if not marker.is_file() or ROOT.resolve() != (BASE / 'ddos-bda-checkout').resolve():
+        if ROOT.is_symlink() or not marker.is_file() or ROOT.resolve().parent != BASE.resolve():
             raise RuntimeError('Refusing to delete an unmarked checkout; choose an empty disposable path.')
         shutil.rmtree(ROOT)
     subprocess.run(['git', 'clone', REPO_URL, str(ROOT)], check=True)
@@ -186,9 +186,18 @@ else:
 sys.path.insert(0, str(ROOT/'analytics'))
 RUN_ID = os.environ.get('BDA_RUN_ID', 'lab2-synthetic-seed42')
 RUN_DIR = RESULTS_BASE / RUN_ID
+if (not IN_COLAB and not IN_KAGGLE and (ROOT/'results/validation.json').is_file()
+        and 'BDA_RUN_ID' not in os.environ and os.environ.get('BDA_RETRAIN', '0') != '1'):
+    RUN_DIR = ROOT/'results'  # relocatable delivery bundle; source is under analytics/
 # To retrain an existing run, set BDA_RETRAIN=1 and choose a NEW BDA_RUN_ID.
 RETRAIN = os.environ.get('BDA_RETRAIN', '0') == '1' or not (RUN_DIR/'validation.json').is_file()
 print('Environment:', 'Colab CPU' if IN_COLAB else 'Kaggle CPU' if IN_KAGGLE else 'Local CPU')
+if shutil.which('nvidia-smi'):
+    accelerator_probe = subprocess.run(['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader'],
+                                       capture_output=True, text=True, timeout=10)
+    print('Available NVIDIA devices:', accelerator_probe.stdout.strip() or 'probe returned no device')
+print('TPU runtime advertised:', bool(os.environ.get('TPU_NAME') or os.environ.get('COLAB_TPU_ADDR')))
+print('Selected backend: CPU. These Spark/scikit-learn estimators do not use CUDA or TPU.')
 print('Source:', ROOT, '\nResults:', RUN_DIR, '\nRetrain:', RETRAIN)
 '''
 
@@ -244,6 +253,8 @@ from IPython.display import display, Image, Markdown
 from bda import experiment as exp
 
 DATASET = Path(os.environ.get('BDA_DATASET', str(ROOT/'archive/legacy-2026-09-22/data/processed/sdn_ddos_versatile.parquet')))
+if not DATASET.is_file() and (ROOT/'inputs/sdn_ddos_versatile.parquet').is_file():
+    DATASET = ROOT/'inputs/sdn_ddos_versatile.parquet'
 if not DATASET.is_file() and IN_COLAB:
     DATASET = RESULTS_BASE/'inputs/sdn_ddos_versatile.parquet'
     if not DATASET.is_file():
@@ -262,7 +273,10 @@ pd.set_option('display.max_columns', 30)
 pd.set_option('display.max_rows', 100)
 print('Dataset:', DATASET)
 print('Java:', subprocess.run(['java', '-version'], capture_output=True, text=True).stderr.splitlines()[0])
-print('Resolved source commit:', subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'], text=True).strip())''')
+if (ROOT/'.git').exists():
+    print('Resolved source commit:', subprocess.check_output(['git','-C',str(ROOT),'rev-parse','HEAD'], text=True).strip())
+else:
+    print('Bundled source snapshot; training commit is recorded in results/environment.json.')''')
     md('''## 3. Reproducible execution of the experiment
 
 The reusable source is `analytics/bda/experiment.py`; plots are in `analytics/bda/visuals.py`.
@@ -457,10 +471,17 @@ With only 450 benign validation windows, a 1% requirement is coarse; it is not a
 The balanced synthetic dataset's high attack prevalence can make PR results look very favorable.''')
     code('''operations = json.loads((RUN_DIR/'operating_points.json').read_text())
 display(pd.DataFrame(operations).T)
+display(pd.read_csv(RUN_DIR/'operating_uncertainty.csv').round(6))
 display(metrics[['model','attack_recall_argmax','benign_fpr_argmax','attack_roc_auc','attack_average_precision','tn','fp','fn','tp']].round(5))
 show_figure('13_roc_pr')
 show_figure('17_prevalence')
 display(pd.read_csv(RUN_DIR/'prevalence_scenarios.csv').query('model == @winner'))''')
+    md('''**Finite-sample uncertainty:** the table includes 95% Wilson intervals for binary recall
+and false-positive rates. Zero false positives among 450 benign test windows does not establish
+a zero population FPR; its Wilson upper endpoint is about 0.85%. The prevalence scenarios use
+point estimates and assume unchanged class-conditional errors. They are hypothetical, not measured
+deployment precision. These intervals concern individual windows under the evaluation distribution,
+not independent capture sessions or a shifted real network.''')
     md('''### 10.1 Output contract and policy example
 
 A useful prediction record contains **window ID, model/version, feature-schema version, predicted class,
