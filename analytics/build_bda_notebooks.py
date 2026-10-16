@@ -434,6 +434,11 @@ weak = per_class[per_class.model == name].nsmallest(3, 'recall')
 display(Markdown(f"**Measured inference:** test macro F1 **{{model_row.f1_macro:.4f}}**, accuracy **{{model_row.accuracy:.2%}}**. "
                  f"The lowest-recall classes are **{{', '.join(weak['class'])}}**. Inspect their off-diagonal errors below."))
 show_figure('cm_' + name.lower().replace(' ', '_'))''')
+        code(f'''name = {name!r}
+model_predictions = pd.read_parquet(RUN_DIR/'predictions'/(name.lower().replace(' ', '_')+'.parquet'))
+print('Actual held-out model outputs, one example per true class:')
+print('Score kind:', json.loads((RUN_DIR/'operating_points.json').read_text())[name]['score_kind'])
+display(model_predictions.groupby('actual', sort=True).head(1))''')
         md('''**How to explain this result in the viva:** identify one strong class, one weak class and
 its most frequent confusion. Connect that behavior to the algorithm's assumptions and the observed
 feature overlap. A weak model is a valid finding; do not change the split just to improve its score.
@@ -513,6 +518,8 @@ predictor = Predictor(RUN_DIR)  # starts Spark only for a Spark-selected estimat
 output = predictor.predict(new_windows)
 predictor.close()
 ```
+Pass `model_name='Random Forest'` (or any other recorded algorithm name) to inspect
+that estimator instead of the validation-selected default.
 Missing required columns fail with a clear schema error; present null cells use saved training medians.
 Scores are estimates within the training distribution. New capture feature definitions must match the
 contract or trigger retraining rather than silently reuse an incompatible estimator.''')

@@ -10,10 +10,12 @@ from .experiment import start_spark, transform_numeric
 
 
 class Predictor:
-    def __init__(self, run_dir):
+    def __init__(self, run_dir, model_name=None):
         self.run_dir = Path(run_dir)
         selection = json.loads((self.run_dir / 'selection.json').read_text())
-        self.name = selection['winner']
+        self.name = model_name or selection['winner']
+        if self.name not in selection['models']:
+            raise ValueError(f'Unknown model: {self.name}. Available: {list(selection["models"])}')
         self.engine = selection['models'][self.name]['engine']
         self.contract = json.loads((self.run_dir / 'feature_contract.json').read_text())
         self.stats = json.loads((self.run_dir / 'preprocessing.json').read_text())
