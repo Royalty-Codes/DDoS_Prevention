@@ -290,6 +290,9 @@ checks = json.loads((RUN_DIR/'validation.json').read_text())
 environment = json.loads((RUN_DIR/'environment.json').read_text())
 assert checks['status'] == 'complete' and checks['nine_algorithms']
 assert hashlib.sha256(DATASET.read_bytes()).hexdigest() == environment['dataset_sha256']
+if not (RUN_DIR/'figures/atlas_5.png').is_file():
+    from bda.extra_figures import build as build_atlas
+    build_atlas(RUN_DIR)
 print('Mode:', 'fresh training in this execution' if RETRAIN else 'reading completed, verified experiment artifacts')
 display(pd.Series({k:v for k,v in environment.items() if k not in ['git_dirty_files','source_sha256']}, name='Recorded environment').to_frame())
 display(pd.Series(checks, name='Validation gates').to_frame())''')
@@ -323,6 +326,14 @@ display(pd.Series(quality, name='Audit finding').to_frame())''')
     ]:
         md(f'### {heading}\n\n{text}')
         code(f"show_figure('{image}')")
+    md('''### 4.8 Distribution atlas: every retained numeric feature
+
+These five pages cover all 40 inputs. Benign and attack groups are normalized separately,
+so their densities can be compared despite the 3,000 versus 36,000 support difference.
+All finite values are retained in the plotted ranges. The dictionary gives units and generated
+meaning. This is descriptive EDA, not a test-driven feature-selection procedure.''')
+    for page in range(1, 6):
+        code(f"show_figure('atlas_{page}')")
     md('''## 5. Preprocessing and leakage prevention
 
 1. Remove identifiers, labels/families, synthetic generation controls, scenario protocol/application,
@@ -348,6 +359,7 @@ display(pd.DataFrame({'feature':features, 'training_median':stats['median'],
                       'training_mean_after_imputation':stats['mean'], 'training_sample_std':stats['std']}))
 display(pd.read_csv(RUN_DIR/'split_counts.csv'))
 show_figure('07_split_counts')''')
+    code("show_figure('00_pipeline')")
     md('''## 6. Spark versus Pandas: measured scope
 
 Python is a language; Pandas and PySpark are different data-processing systems accessed from Python.
